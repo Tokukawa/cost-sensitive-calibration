@@ -1,7 +1,7 @@
 # cost-sensitive-calibration
 
 This package implements a basic version of binary sensitive calibration based in this Medium
-[article](http://google.com).
+[article](https://medium.com/mercadolibre-datablog/cost-sensitive-classification-in-fraud-prevention-263170d8fcfe).
 
 ```bash
 pip install git+https://github.com/Tokukawa/cost-sensitive-calibration.git
