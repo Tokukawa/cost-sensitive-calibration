@@ -12,6 +12,7 @@ setuptools.setup(
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://github.com/Tokukawa/cost-sensitive-calibration",
+    install_requires=["sklearn", "matplotlib"],
     packages=setuptools.find_packages(),
     classifiers=[
         "Programming Language :: Python :: 3",
