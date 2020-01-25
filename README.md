@@ -29,13 +29,13 @@ is like this:
   </tr>
   <tr>
     <td>model positive</td>
-    <td>0</td>
-    <td>-0.01</td>
+    <td>0.0</td>
+    <td>-0.1</td>
   </tr>
   <tr>
     <td>model negative</td>
-    <td>-1</td>
-    <td>+0.1</td>
+    <td>-1.0</td>
+    <td>+0.5</td>
   </tr>
   <tr>
     <td></td>
@@ -44,7 +44,7 @@ is like this:
   </tr>
 </table>
 
-
+The utility matrix must expressed in per dollar return. So -1 means -100% returns 0.5 means +50% return and so on.
 Than you can use ROC based optimization like this in order to find the optimal threshold:
 
 ```python
