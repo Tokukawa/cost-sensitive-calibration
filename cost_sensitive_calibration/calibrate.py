@@ -42,7 +42,7 @@ class BinaryCalibration:
         ) / ((c - a) * positives_freq)
 
     def __estimate_optimal_threshold_and_utility(self, fpr, tpr, th, positives_freq):
-        """We make the crunch the numbers here."""
+        """We crunch the numbers here."""
         delta = tpr - self.calibration_curve_tpr(fpr, positives_freq)
         max_delta_index = np.where(delta == np.amax(delta))[0][0]
         max_util = self.utility(
