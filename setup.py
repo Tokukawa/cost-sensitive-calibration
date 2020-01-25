@@ -4,7 +4,7 @@ with open("README.md", "r") as fh:
     long_description = fh.read()
 
 setuptools.setup(
-    name="cost-sensitive-calibration",
+    name="cost_sensitive_calibration",
     version="0.0.1",
     author="Tokukawa",
     author_email="emanuele.luzio@gmail.com",
