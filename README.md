@@ -53,7 +53,7 @@ caliber = BinaryCalibration(utility_matrix)
 threshold, max_utility = caliber.calibrate(labels, preds, plot_roc=False)
 print("Optimal Threshold:{} \nMax Utility: {}".format(threshold, max_utility))
 ```
-```python
+```bash
 >Optimal Threshold:0.316255844096 
 >Max Utility: 0.0975
 ```
@@ -70,7 +70,7 @@ action = {0: 'Take action 1', 1: 'Take action 2'}
 print(action[binary_bayesian_classifier.predict(my_pred)])
 ```
 
-```python
+```bash
 >Take action 2
 ```
 
