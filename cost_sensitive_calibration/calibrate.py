@@ -102,3 +102,26 @@ class BinaryCalibration:
         plt.legend(loc="lower right")
         plt.show()
         return
+
+
+class BinaryBayesianMinimumRisk:
+    """Bayesiann minimum risk is in charge to select best action given many options."""
+
+    def __init__(self, utility_matrix):
+        """
+        Initialize the calibration.
+
+        :param utility_matrix: numpy matrix representing unitary utility
+        """
+        self.util_matrix = utility_matrix
+
+    def predict(self, pred):
+        """
+        Predict pick the optimal action.
+
+        :param pred: float representing probability of positives
+        :return: integer index of the option to pick
+        """
+        return np.argmax(
+            np.sum(self.util_matrix * np.array([[pred, 1 - pred]]), axis=1)
+        )
