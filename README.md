@@ -11,6 +11,7 @@ So let's say you have a binary classifier that must be calibrated based on a uti
 How can I use this package? Here an actual example:
 
 ```python
+from cost_sensitive_calibration.calibrate import BinaryCalibration, AcceptReviewReject
 import numpy as np
 
 EXAMPLES = 1000
@@ -57,6 +58,25 @@ print("Optimal Threshold:{} \nMax Utility: {}".format(threshold, max_utility))
 >Optimal Threshold:0.316255844096 
 >Max Utility: 0.0975
 ```
+In case you want to use an Accept-Review-Reject approach you can use the class `AcceptReviewReject`. Example
+
+```python
+from cost_sensitive_calibration.calibrate import AcceptReviewReject
+two_thresholds_caliber = AcceptReviewReject(utility_matrix={'PR': 0., 'NR': 0., 'PM': -0.1, 'NM': 0.025 , 'PA': -1, 'NA': 0.025}, steps=1000)
+lower_threshold, higher_threshold, utility_per_dollar = two_thresholds_caliber.calibrate(labels, preds)
+```
+
+where PR, NR, PM, NM, PA, NA means:
+
+            PR -> Positive Rejected
+            NR -> Negative Rejected
+            PM -> Positive to Manual Review
+            NM -> Negative to Manual Review
+            PA -> Positive Accepted
+            NA -> Negative Accepted
+
+
+
 
 Or you can use a bayesian approach to take an action without a threshold:
 

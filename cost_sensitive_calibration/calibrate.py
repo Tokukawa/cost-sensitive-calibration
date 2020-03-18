@@ -125,3 +125,66 @@ class BinaryBayesianMinimumRisk:
         return np.argmax(
             np.sum(self.util_matrix * np.array([[pred, 1 - pred]]), axis=1)
         )
+
+
+class AcceptReviewReject:
+    """Implement the class for basic accept-review-reject pipeline. Essentially
+    performs a grid search for the best two thresholds in order to maximize the utility."""
+
+    def __init__(self, utility_matrix, steps=1000):
+        """
+        Initialize the calibration.
+
+        :param utility_matrix: numpy dictionary representing unitary utility with the keys
+            PR, NR, PM, NM, PA, NA where:
+
+            PR -> Positive Rejected
+            NR -> Negative Rejected
+            PM -> Positive to Manual Review
+            NM -> Negative to Manual Review
+            PA -> Positive Accepted
+            NA -> Negative Accepted
+
+        :param steps: Int representing how many steps we want perform in the grid search for each parameter.
+        """
+        self.util_matrix = np.array([[utility_matrix['PR'], utility_matrix['NR']],
+                                     [utility_matrix['PM'], utility_matrix['NM']],
+                                     [utility_matrix['PA'], utility_matrix['NA']]])
+        self.steps = round(steps - 1)
+        self.grid_search_results = None
+
+    @staticmethod
+    def __prob_to_pred(low_step, high_step, pred):
+        high_msk = (pred > high_step) * 1
+        low_msk = (low_step <= pred) * 1
+        return -1 + high_msk + low_msk
+
+    def __utility(self, low_step, high_step, labels, pred):
+        N = labels.shape[0]
+        prediction_label = self.__prob_to_pred(low_step, high_step, pred)
+        FA = np.sum((prediction_label == -1) * labels * 1)
+        FM = np.sum((prediction_label == 0) * labels * 1)
+        FR = np.sum((prediction_label == 1) * labels * 1)
+        NFA = np.sum((prediction_label == -1) * np.logical_not(labels) * 1)
+        NFM = np.sum((prediction_label == 0) * np.logical_not(labels) * 1)
+        NFR = np.sum((prediction_label == 1) * np.logical_not(labels) * 1)
+        U = np.array([[FR, NFR], [FM, NFM], [FA, NFA]]) * self.util_matrix
+        u = np.sum(U) / N
+        return [u, low_step, high_step]
+
+    def calibrate(self, labels, preds):
+        """Calibrate the classifier thresholds.
+
+        :returns lower threshold, higher threshold, max utility"""
+        delta = np.insert(np.cumsum([1 / self.steps] * self.steps), 0, 0)
+        low_steps = np.repeat(delta, delta.shape[0])
+        high_steps = np.tile(delta, delta.shape[0])
+        high_steps = high_steps * (high_steps >= low_steps) + low_steps * (high_steps < low_steps)
+        thresholds = np.unique(np.array([low_steps, high_steps]).T, axis=0)
+        low_steps, high_steps = thresholds.T
+        max_util_matrix = [self.__utility(low_step, high_step, labels, preds) for low_step, high_step in zip(low_steps, high_steps)]
+        self.grid_search_results = np.array(max_util_matrix)
+        max_util_index = np.argmax(self.grid_search_results, axis=0)[0]
+        return max_util_matrix[max_util_index][1], \
+               max_util_matrix[max_util_index][2], \
+               max_util_matrix[max_util_index][0]
