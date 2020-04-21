@@ -126,31 +126,29 @@ class BinaryBayesianMinimumRisk:
             np.sum(self.util_matrix * np.array([[pred, 1 - pred]]), axis=1)
         )
 
-
 class AcceptReviewReject:
     """Implement the class for basic accept-review-reject pipeline. Essentially
     performs a grid search for the best two thresholds in order to maximize the utility."""
 
-    def __init__(self, utility_matrix, steps=1000):
+    def __init__(self, utility_matrix, steps=1000, mr_frac=0.):
         """
         Initialize the calibration.
-
         :param utility_matrix: numpy dictionary representing unitary utility with the keys
             PR, NR, PM, NM, PA, NA where:
-
             PR -> Positive Rejected
             NR -> Negative Rejected
             PM -> Positive to Manual Review
             NM -> Negative to Manual Review
             PA -> Positive Accepted
             NA -> Negative Accepted
-
         :param steps: Int representing how many steps we want perform in the grid search for each parameter.
+        mr_frac: float in [0,1] represents the fraction you want send to manual review
         """
         self.util_matrix = np.array([[utility_matrix['PR'], utility_matrix['NR']],
                                      [utility_matrix['PM'], utility_matrix['NM']],
                                      [utility_matrix['PA'], utility_matrix['NA']]])
         self.steps = round(steps - 1)
+        self.mr_frac = mr_frac
         self.grid_search_results = None
 
     @staticmethod
@@ -174,12 +172,33 @@ class AcceptReviewReject:
 
     def calibrate(self, labels, preds):
         """Calibrate the classifier thresholds.
-
         :returns lower threshold, higher threshold, max utility"""
         delta = np.insert(np.cumsum([1 / self.steps] * self.steps), 0, 0)
         low_steps = np.repeat(delta, delta.shape[0])
         high_steps = np.tile(delta, delta.shape[0])
         high_steps = high_steps * (high_steps >= low_steps) + low_steps * (high_steps < low_steps)
+        thresholds = np.unique(np.array([low_steps, high_steps]).T, axis=0)
+        low_steps, high_steps = thresholds.T
+        max_util_matrix = [self.__utility(low_step, high_step, labels, preds) for low_step, high_step in zip(low_steps, high_steps)]
+        self.grid_search_results = np.array(max_util_matrix)
+        max_util_index = np.argmax(self.grid_search_results, axis=0)[0]
+        return max_util_matrix[max_util_index][1], \
+               max_util_matrix[max_util_index][2], \
+               max_util_matrix[max_util_index][0]
+    
+    
+    def find_optimal_window(self, labels, preds):
+        """Calibrate the classifer thresholds keeping manual review fraction within mr_frac limit.
+        :returns lower threshold, higher threshold, max utility"""
+        raw_delta = np.insert(np.cumsum([1 / self.steps] * self.steps), 0, 0)
+        offset = round(self.mr_frac * (self.steps + 1))
+        delta = np.percentile(preds, raw_delta * 100)
+        limits = np.array(list(delta[offset:]) + list([delta[-1]] * offset))
+        low_steps = np.repeat(delta, delta.shape[0])
+        high_steps = np.tile(delta, delta.shape[0])
+        high_steps_limits = np.repeat(limits, delta.shape[0])
+        high_steps = high_steps * (high_steps >= low_steps) + low_steps * (high_steps < low_steps)
+        high_steps = high_steps * (high_steps < high_steps_limits) + high_steps_limits * (high_steps >= high_steps_limits)
         thresholds = np.unique(np.array([low_steps, high_steps]).T, axis=0)
         low_steps, high_steps = thresholds.T
         max_util_matrix = [self.__utility(low_step, high_step, labels, preds) for low_step, high_step in zip(low_steps, high_steps)]
